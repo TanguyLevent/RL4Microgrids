@@ -1,9 +1,6 @@
 from collections import deque
 import random
 import numpy as np
-import os
-import tensorflow as tf
-if type(tf.contrib) != type(tf): tf.contrib._warning = None
 
 from keras.models import Sequential
 from keras.layers import Dense
@@ -25,7 +22,7 @@ class DQNAgent:
         self.memory_10 = deque(maxlen=self.memory_10_size)
         self.batch_size = 32
         
-        self.gamma = 0.1#self.count_slurm/10
+        self.gamma = 0.1 #self.count_slurm/10
         self.epsilon = 1.0
 
         self.epsilon_min = 0.1
@@ -86,10 +83,6 @@ class DQNAgent:
        
         self.target_network.set_weights(self.policy_network.get_weights())
 
-    def update_best_model(self):
-
-        self.best_network.set_weights(self.policy_network.get_weights())
-    
     ######### END UPDATES: EPS and TARGET NETWORK ############
     
     

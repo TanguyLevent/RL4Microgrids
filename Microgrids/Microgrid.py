@@ -1,29 +1,45 @@
-from Preprocessing import Preprocessing_X as PP
+from Microgrids import Preprocessing as PP
 
 import numpy as np
 import random
-from numpy import array
-
 
 class Environment:
 
-    def __init__(self):
+    def __init__(self, mode_mg = "connected",pv_penetration = 52,day= 4,dataset = "X", mode_learning = True):
+        
+        self.DF = PP.Prepro(day, pv_penetration, dataset)
 
-        self.data = PP
+        if mode_learning == True:
+
+            self.data = self.DF.dt_training
+            
+        else:
+
+            self.data = self.DF.dt_testing
         
         self.netdemand = self.data[0]
-                
         self.num_step = len(self.data)        
         self.timestep = 0
-        self.hour = 0
+        self.hour = self.data.index[self.timestep].hour
         self.ND_Category = 0
-        
         self.battery_initial = 10
         self.battery_min = 0
         self.battery_max = 100
         self.battery_capacity = self.battery_initial
         
-        self.RE = 1
+
+        if mode_mg == "islanded":
+
+            self.RE = 0
+
+        elif mode_mg == "connected":
+
+            self.RE = 1
+
+        else:
+
+            print("Error in microgrid mode definition")
+
         
         self.done = False
         self.reward = 0
@@ -108,9 +124,16 @@ class Environment:
         return (self.state, self.reward, self.done)
 
 
-    def reset(self, dt, random_bat):
-        
-        self.data = dt
+    def reset(self, mode_mg, mode_learning, random_bat):
+
+
+        if mode_learning == True:
+
+            self.data = self.DF.dt_training
+
+        else:
+
+            self.data = self.DF.dt_testing
         
         self.timestep = 0     
         self.netdemand = self.data[self.timestep]
@@ -134,7 +157,19 @@ class Environment:
 
         self.done = False
         self.reward = 0
-        self.RE =1
+
+        if mode_mg == "islanded":
+
+            self.RE = 0
+
+        elif mode_mg == "connected":
+
+            self.RE = 1
+
+        else:
+
+            print("Error in microgrid mode definition")
+
         
         if self.netdemand < 0: 
             
@@ -144,7 +179,6 @@ class Environment:
             
             self.ND_Category = 0
         
-        #self.netdemand_predicted = self.netdemand	
 
         self.state = (self.netdemand,self.battery_capacity, self.RE,self.hour, self.ND_Category)
         self.state = np.asarray(self.state)
