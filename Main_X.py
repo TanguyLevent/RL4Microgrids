@@ -4,7 +4,10 @@ import time
 import numpy as np
 import pandas as pd
 
-##################################### BEGIN MAIN ##################################
+############################################## BEGIN MAIN #####################################################
+
+################################## BEGIN TRAINING PHASE ##################################
+
 #Unblock comment if using on supercomputer
 #count_slurm=int(os.environ["SLURM_ARRAY_TASK_ID"])
 #job_id = int(os.environ["SLURM_ARRAY_JOB_ID"])
@@ -20,34 +23,32 @@ agent = ag.DQNAgent(env)
 
 episode = 200000
 rate_step_hour = 0.003
-print("variable pour epsilon:",rate_step_hour)
 target_network_frequency = 0
 
+min_cost = 0
 cost_memory = []
 mean_cumulated_cost_memory = []
-mean_last_100_cost= 0
+mean_last_100_cost = 0
 mean_last_100_cost_memory = []
-
-counter = 0
 
 t0 = time.time()
 
+print("\nJour: {}, Penetration PV: {}, Microgrid: {}, Dataset: {}".format(int(day), int(pv_penetration), str(mode_mg), str(dataset)))
+print("Nombre d'épisode:", episode)
 print("Gamma equal to:", agent.gamma)
 print("Learning rate:", agent.learning_rate)
-print("Epsilon", agent.epsilon)
+print("Variable pour epsilon update:",rate_step_hour)
+print("Epsilon start", agent.epsilon)
 print("Eps_min to:", agent.epsilon_min)
-print("Memory & batch:", agent.memory_size, agent.batch_size)
+print("Memory & batch:", agent.memory_size, agent.batch_size,"\n")
 
 for e in range(episode+1):
 
     total_cost_episode = 0
-    total_cost_episode_wo_eps = 0
-    total_cost_episode_wo_eps_test = 0
-
     step_episode = 0
-    step_hour_count = e*rate_step_hour
+    epsilon_update_value = e*rate_step_hour
 
-    state = env.reset(mode_mg, mode_learning,True)
+    state = env.reset(mode_learning,True)
  
     while not env.done:
           
@@ -60,34 +61,37 @@ for e in range(episode+1):
 
         step_episode += 1
         target_network_frequency +=1
-        counter += 1    
+ 
  
         if target_network_frequency % 5000 == 0 :
          
             agent.update_target_model()
         
-    agent.update_epsilon(step_hour_count)
+    agent.update_epsilon(epsilon_update_value)
   
     if len(agent.memory) > agent.batch_size:
 
         agent.experience_replay()    
+        
+################################## END TRAINING PHASE ##################################
 
-########## BEGIN Record Part ##########
+################################## BEGIN Record Part ##################################
     
     cost_memory.append(total_cost_episode)
     mean_cumulated_cost_memory.append(np.around(np.mean(cost_memory), decimals=1))
-
+    min_cost = max(cost_memory)
+    
     if e > 100:
         
-        mean_last_100_cost = np.sum(cost_memory[-100:])/100
+        mean_last_100_cost= np.sum(cost_memory[-100:])/100
         mean_last_100_cost_memory.append(mean_last_100_cost)
 
-    eps = agent.epsilon
 
     if e % 100 == 0 :
         t1 = time.time()
-        print("episode: {}/{} , epsilon: {:.2}, meancost: {:.2}, in {:.2} secondes".format(int(e), int(episode), float(eps) , float(mean_last_100_cost), float(t1-t0)))
-        print('Mean Loss over the last 10 loss',np.mean(agent.history[-10:]))
+        print("episode: {}/{} , epsilon: {:.2}, meancost: {:.2}, mincost: {:.2}, in {:.2} secondes".format(int(e), int(episode), float(agent.epsilon) , float(mean_last_100_cost), float (min_cost),float(t1-t0)))
+        print('Mean Loss over the last 10 loss {:.2}'.format(np.mean(agent.history[-10:])))
+
 
     if e % 50000 == 0:
                 
@@ -104,12 +108,16 @@ for e in range(episode+1):
         df = {"Loss_State_Space": agent.history}
         df = pd.DataFrame(df)
         df.to_csv("result_Loss_.csv") #+str(job_id)+"_"+str(count_slurm)+".csv", index = False)
-                  
+ 
+################################## END Record Part ##################################
+        
+################################## BEGIN TRAINING & TESTING GREEDY MODE ##################################
+                 
 total_cost_episode = 0
 step_episode = 0
-state = env.reset(mode_mg, mode_learning,False)
+state = env.reset(mode_learning,False)
  
-print("Training Set Policy Network:\n")
+print("\nTraining Set Policy Network:")
   
 while not env.done:
      
@@ -128,10 +136,10 @@ while not env.done:
 total_cost_episode = 0
 step_episode = 0
 mode_learning = False   
-state = env.reset(mode_mg, mode_learning,False)
+state = env.reset(mode_learning,False)
  
   
-print("Testing set Policy Network\n:")
+print("\nTesting set Policy Network:")
   
 while not env.done:
  
@@ -147,6 +155,6 @@ while not env.done:
     total_cost_episode += reward
     step_episode += 1
     
-########## END Record Part ##########
+################################## END TRAINING & TESTING GREEDY MODE ##################################
     
-##################################### END MAIN ##################################
+############################################## END MAIN #####################################################
