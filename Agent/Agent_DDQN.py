@@ -30,7 +30,7 @@ class DQNAgent:
                 
         self.policy_network = self.build_model()
         self.target_network = self.build_model()
-        self.best_network = self.build_model()      
+       
         self.update_target_model()       
  
         self.bool_test = False
@@ -44,12 +44,10 @@ class DQNAgent:
     def build_model(self):
 
         model = Sequential()
-        model.add(Dense(self.state_size, activation='linear'))
-        
+        model.add(Dense(self.state_size, activation='linear'))        
         model.add(Dense(100, activation='relu'))
         model.add(Dense(100, activation='relu'))
         model.add(Dense(100, activation='relu'))
-
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mean_squared_error', optimizer= Adam(lr=self.learning_rate))
         
