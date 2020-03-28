@@ -12,7 +12,7 @@ import pandas as pd
 #count_slurm=int(os.environ["SLURM_ARRAY_TASK_ID"])
 #job_id = int(os.environ["SLURM_ARRAY_JOB_ID"])
 
-mode_mg = "connected" #choice: islanded, connected, both
+mode_mg = "both" #choice: islanded, connected, both
 pv_penetration = 52
 day = 4
 dataset = "X" #choice: X, Tahiti
